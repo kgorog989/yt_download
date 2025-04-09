@@ -1,0 +1,17 @@
+#size
+APP_SIZE = (500, 300)
+
+#text
+FONT = "Helvetica"
+TITLE_FONT_SIZE = 30
+TITLE_FONT_WEIGHT = "bold"
+MAIN_FONT_SIZE = 15
+
+#styling
+LINK_WIDTH = 300
+DOWNLOAD_WIDTH = 200
+
+#colors
+RED = "#CD201F"
+WHITE = "#FFFFFF"
+BLACK = "#212121"
