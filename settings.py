@@ -1,11 +1,13 @@
 #size
 APP_SIZE = (500, 300)
+POPUP_SIZE = (250, 200)
 
 #text
 FONT = "Helvetica"
 TITLE_FONT_SIZE = 30
 TITLE_FONT_WEIGHT = "bold"
 MAIN_FONT_SIZE = 15
+POPUP_FONT_SIZE = 20
 
 #styling
 LINK_WIDTH = 300

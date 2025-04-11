@@ -37,6 +37,8 @@ class App(ctk.CTk):
         #getting the yt link
         link = entry.get()
         
+        popup_font = ctk.CTkFont(family=FONT, size=POPUP_FONT_SIZE)
+        
         if task_type_variable.get() == "single":
             try:
                 yt = YouTube(link)
@@ -44,33 +46,85 @@ class App(ctk.CTk):
                 #filtering streams
                 if streaming_type_variable.get() == "audio":
                     streams_available = yt.streams.filter(only_audio=True)
-                    print(streams_available)
+                    target_stream = self.filter_audio_streams(streams_available, quality_type_variable)
                 elif streaming_type_variable.get() == "video":
                     streams_available = yt.streams.filter(only_video=True)
-                    print(streams_available)
+                    target_stream = self.filter_video_streams(streams_available, quality_type_variable)
                 else: #when streaming_type_variable is "both"
                     streams_available = yt.streams.filter(progressive=True)
-                    print(streams_available)
+                    target_stream = self.filter_progressive_streams(streams_available, quality_type_variable)
                 
-                
-                
-                stream = streams_available.first()
-                print(stream)
-
-                #stream.download()
-                print('Task Completed!')
+                #downloading the target
+                target_stream.download(output_path="downloads")
+                PopupMessage(self,font=popup_font, text="Download complete!")
+                entry.delete(0, "end")
             except:
-                print("single error")
-        else:
+                PopupMessage(self,font=popup_font, text="Incorrect link input!")
+        else: #when it is a playlist
             try:
                 playlist = Playlist(link)
                 
                 for video in playlist.videos:
-                    ys = video.streams.get_audio_only()
-                    ys.download(mp3=True)
+                    if streaming_type_variable.get() == "audio":
+                        streams_available = video.streams.filter(only_audio=True)
+                        target_stream = self.filter_audio_streams(streams_available, quality_type_variable)
+                        #downloading the target
+                        target_stream.download(output_path="downloads")
+                    elif streaming_type_variable.get() == "video":
+                        streams_available = video.streams.filter(only_video=True)
+                        target_stream = self.filter_video_streams(streams_available, quality_type_variable)
+                        #downloading the target
+                        target_stream.download(output_path="downloads")
+                    else: #when streaming_type_variable is "both"
+                        streams_available = video.streams.filter(progressive=True)
+                        target_stream = self.filter_progressive_streams(streams_available, quality_type_variable)
+                        #downloading the target
+                        target_stream.download(output_path="downloads")
+                    
+                #full download complete
+                PopupMessage(self,font=popup_font, text="Download complete!")
+                entry.delete(0, "end")
             except:
-                print("playlist error")
-        
+                PopupMessage(self,font=popup_font, text="Incorrect link input!")
+
+    def filter_audio_streams(self, streams_available, quality_type_variable):
+        if quality_type_variable.get() == "best":
+            best = streams_available.first()
+            for stream in streams_available:
+                if int(best.abr.rstrip("kbps")) < int(stream.abr.rstrip("kbps")):
+                    best = stream
+            target_stream = best
+        else: #worst quality
+            worst = streams_available.first()
+            for stream in streams_available:
+                if int(worst.abr.rstrip("kbps")) > int(stream.abr.rstrip("kbps")):
+                    worst = stream 
+            target_stream = worst
+        return target_stream
+            
+    def filter_video_streams(self, streams_available, quality_type_variable):
+        if quality_type_variable.get() == "best":
+            best = streams_available.first()
+            for stream in streams_available:
+                if int(best.resolution.rstrip("p")) < int(stream.resolution.rstrip("p")):
+                    best = stream
+            target_stream = best
+        else: #worst quality
+            worst = streams_available.first()
+            for stream in streams_available:
+                if int(worst.resolution.rstrip("p")) > int(stream.resolution.rstrip("p")):
+                    worst = stream 
+            target_stream = worst
+        return target_stream
+            
+    def filter_progressive_streams(self, streams_available, quality_type_variable):
+        if quality_type_variable.get() == "best":
+            best = streams_available.get_highest_resolution()
+            target_stream = best
+        else: #when its the worst
+            worst = streams_available.get_lowest_resolution()
+            target_stream = worst
+        return target_stream
 
 class OptionsFrame(ctk.CTkFrame):
     def __init__(self, parent, font, task_type_variable, streaming_type_variable, quality_type_variable):
@@ -92,8 +146,8 @@ class TaskTypeFrame(ctk.CTkFrame):
         super().__init__(parent, fg_color="transparent")
         
         label = TitleLabel(self, text="Select Type", font=font)
-        radio1 = RadioButton(self, text="Single Video", font=font, value="single", variable=variable, command=lambda : print(variable.get()))
-        radio2 = RadioButton(self, text="Playlist", font=font,value="playlist", variable=variable, command=lambda : print(variable.get()))
+        radio1 = RadioButton(self, text="Single Video", font=font, value="single", variable=variable)
+        radio2 = RadioButton(self, text="Playlist", font=font,value="playlist", variable=variable)
         
         label.pack()
         radio1.pack()
@@ -104,9 +158,9 @@ class StreamingTypeFrame(ctk.CTkFrame):
         super().__init__(parent, fg_color="transparent")
         
         label = TitleLabel(self, text="Download Type", font=font)
-        radio1 = RadioButton(self, text="Audio", font=font, value="audio", variable=variable, command=lambda : print(variable.get()))
-        radio2 = RadioButton(self, text="Video", font=font, value="video", variable=variable, command=lambda : print(variable.get()))
-        radio3 = RadioButton(self, text="Both", font=font, value="both", variable=variable, command=lambda : print(variable.get()))
+        radio1 = RadioButton(self, text="Audio", font=font, value="audio", variable=variable)
+        radio2 = RadioButton(self, text="Video", font=font, value="video", variable=variable)
+        radio3 = RadioButton(self, text="Both", font=font, value="both", variable=variable)
         
         label.pack()
         radio1.pack()
@@ -118,8 +172,8 @@ class QualityTypeFrame(ctk.CTkFrame):
         super().__init__(parent, fg_color="transparent")
         
         label = TitleLabel(self, text="Quality Type", font=(FONT, MAIN_FONT_SIZE))
-        radio1 = RadioButton(self, text="Best", font=font, value="best", variable=variable, command=lambda: print(variable.get()))
-        radio2 = RadioButton(self, text="Worst", font=font, value="worst", variable=variable, command=lambda: print(variable.get()))
+        radio1 = RadioButton(self, text="Best", font=font, value="best", variable=variable)
+        radio2 = RadioButton(self, text="Worst", font=font, value="worst", variable=variable)
         
         label.pack()
         radio1.pack()
@@ -132,13 +186,12 @@ class TitleLabel(ctk.CTkLabel):
                           font = font)
 
 class RadioButton(ctk.CTkRadioButton):
-    def __init__(self, parent, text, font, value, variable, command):
+    def __init__(self, parent, text, font, value, variable):
         super().__init__(parent, 
                           text = text, 
                           font = font, 
                           value = value, 
                           variable = variable, 
-                          command = command, 
                           fg_color=RED, 
                           hover_color=BLACK)
 
@@ -158,7 +211,34 @@ class DownloadButton(ctk.CTkButton):
                          fg_color=RED, 
                          hover_color=BLACK, 
                          command=command)
+
+class PopupMessage(ctk.CTkToplevel):
+    def __init__(self, parent, font, text):
+        super().__init__(parent)     
         
+        self.title(" ")
+        self.geometry(f"{POPUP_SIZE[0]}x{POPUP_SIZE[1]}")
+        self.resizable(False, False)
+        self.iconbitmap("empty.ico")
+        
+        self.columnconfigure(0, weight=1, uniform='b')
+        self.rowconfigure((0,1), weight=1, uniform='b')
+        
+        label = ctk.CTkLabel(self, text=text, font=font)
+        button = ctk.CTkButton(self, 
+                               font=font, 
+                               fg_color=RED, 
+                               hover_color=BLACK, 
+                               text="Close", 
+                               command=self.destroy)
+        
+        label.grid(column=0, row=0, sticky="sew", padx=20, pady=20)
+        button.grid(column=0, row=1, sticky="nsew", padx=30, pady=30)
+        
+        #settings
+        self.transient(parent)
+        self.grab_set()
+        parent.wait_window(self)
    
 if __name__=='__main__':
     app = App()
