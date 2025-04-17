@@ -13,9 +13,9 @@ class App(ctk.CTk):
         self.iconbitmap("empty.ico")
         
         #creating variables
-        task_type_variable = ctk.StringVar(value="single")
-        streaming_type_variable = ctk.StringVar(value="audio")
-        quality_type_variable = ctk.StringVar(value="best")
+        self.task_type_variable = ctk.StringVar(value="single")
+        self.streaming_type_variable = ctk.StringVar(value="audio")
+        self.quality_type_variable = ctk.StringVar(value="best")
         
         #creating fonts
         title_font = ctk.CTkFont(family=FONT, size=TITLE_FONT_SIZE, weight=TITLE_FONT_WEIGHT)
@@ -23,41 +23,41 @@ class App(ctk.CTk):
         
         #creating widgets
         label = TitleLabel(self, text="YouTube Downloader", font=title_font)
-        frame = OptionsFrame(self, main_font, task_type_variable, streaming_type_variable, quality_type_variable)
-        entry = LinkEntry(self, width=LINK_WIDTH, font=main_font)
-        button = DownloadButton(self, font=main_font, command=lambda: self.download(entry, task_type_variable, streaming_type_variable, quality_type_variable))    
+        frame = OptionsFrame(self, main_font, self.task_type_variable, self.streaming_type_variable, self.quality_type_variable)
+        self.entry = LinkEntry(self, width=LINK_WIDTH, font=main_font)
+        button = DownloadButton(self, font=main_font, command=self.download)    
         
         # packing the widgets
         label.place(relx=0.5, rely=0.2, anchor="center")
         frame.place(relx=0.5, rely=0.5, anchor="center")
-        entry.place(relx=0.5, rely=0.8, anchor="center")
+        self.entry.place(relx=0.5, rely=0.8, anchor="center")
         button.place(relx=0.5, rely=0.9, anchor="center")
         
-    def download(self, entry, task_type_variable, streaming_type_variable, quality_type_variable):
+    def download(self):
         #getting the yt link
-        link = entry.get()
+        link = self.entry.get()
         
         popup_font = ctk.CTkFont(family=FONT, size=POPUP_FONT_SIZE)
         
-        if task_type_variable.get() == "single":
+        if self.task_type_variable.get() == "single":
             try:
                 yt = YouTube(link)
                 
                 #filtering streams
-                if streaming_type_variable.get() == "audio":
+                if self.streaming_type_variable.get() == "audio":
                     streams_available = yt.streams.filter(only_audio=True)
-                    target_stream = self.filter_audio_streams(streams_available, quality_type_variable)
-                elif streaming_type_variable.get() == "video":
+                    target_stream = self.filter_audio_streams(streams_available)
+                elif self.streaming_type_variable.get() == "video":
                     streams_available = yt.streams.filter(only_video=True)
-                    target_stream = self.filter_video_streams(streams_available, quality_type_variable)
+                    target_stream = self.filter_video_streams(streams_available)
                 else: #when streaming_type_variable is "both"
                     streams_available = yt.streams.filter(progressive=True)
-                    target_stream = self.filter_progressive_streams(streams_available, quality_type_variable)
+                    target_stream = self.filter_progressive_streams(streams_available)
                 
                 #downloading the target
                 target_stream.download(output_path="downloads")
                 PopupMessage(self,font=popup_font, text="Download complete!")
-                entry.delete(0, "end")
+                self.entry.delete(0, "end")
             except:
                 PopupMessage(self,font=popup_font, text="Incorrect link input!")
         else: #when it is a playlist
@@ -65,30 +65,30 @@ class App(ctk.CTk):
                 playlist = Playlist(link)
                 
                 for video in playlist.videos:
-                    if streaming_type_variable.get() == "audio":
+                    if self.streaming_type_variable.get() == "audio":
                         streams_available = video.streams.filter(only_audio=True)
-                        target_stream = self.filter_audio_streams(streams_available, quality_type_variable)
+                        target_stream = self.filter_audio_streams(streams_available)
                         #downloading the target
                         target_stream.download(output_path="downloads")
-                    elif streaming_type_variable.get() == "video":
+                    elif self.streaming_type_variable.get() == "video":
                         streams_available = video.streams.filter(only_video=True)
-                        target_stream = self.filter_video_streams(streams_available, quality_type_variable)
+                        target_stream = self.filter_video_streams(streams_available)
                         #downloading the target
                         target_stream.download(output_path="downloads")
                     else: #when streaming_type_variable is "both"
                         streams_available = video.streams.filter(progressive=True)
-                        target_stream = self.filter_progressive_streams(streams_available, quality_type_variable)
+                        target_stream = self.filter_progressive_streams(streams_available)
                         #downloading the target
                         target_stream.download(output_path="downloads")
                     
                 #full download complete
                 PopupMessage(self,font=popup_font, text="Download complete!")
-                entry.delete(0, "end")
+                self.entry.delete(0, "end")
             except:
                 PopupMessage(self,font=popup_font, text="Incorrect link input!")
 
-    def filter_audio_streams(self, streams_available, quality_type_variable):
-        if quality_type_variable.get() == "best":
+    def filter_audio_streams(self, streams_available):
+        if self.quality_type_variable.get() == "best":
             best = streams_available.first()
             for stream in streams_available:
                 if int(best.abr.rstrip("kbps")) < int(stream.abr.rstrip("kbps")):
@@ -102,8 +102,8 @@ class App(ctk.CTk):
             target_stream = worst
         return target_stream
             
-    def filter_video_streams(self, streams_available, quality_type_variable):
-        if quality_type_variable.get() == "best":
+    def filter_video_streams(self, streams_available):
+        if self.quality_type_variable.get() == "best":
             best = streams_available.first()
             for stream in streams_available:
                 if int(best.resolution.rstrip("p")) < int(stream.resolution.rstrip("p")):
@@ -117,8 +117,8 @@ class App(ctk.CTk):
             target_stream = worst
         return target_stream
             
-    def filter_progressive_streams(self, streams_available, quality_type_variable):
-        if quality_type_variable.get() == "best":
+    def filter_progressive_streams(self, streams_available):
+        if self.quality_type_variable.get() == "best":
             best = streams_available.get_highest_resolution()
             target_stream = best
         else: #when its the worst
