@@ -1,6 +1,11 @@
+import os
+import subprocess
+
 import customtkinter as ctk
-from settings import *
+import ffmpeg
 from pytubefix import YouTube, Playlist
+
+from settings import *
 
 class App(ctk.CTk):
     def __init__(self):
@@ -47,15 +52,37 @@ class App(ctk.CTk):
                 if self.streaming_type_variable.get() == "audio":
                     streams_available = yt.streams.filter(only_audio=True)
                     target_stream = self.filter_audio_streams(streams_available)
+                    target_stream.download(output_path="downloads")
                 elif self.streaming_type_variable.get() == "video":
                     streams_available = yt.streams.filter(only_video=True)
                     target_stream = self.filter_video_streams(streams_available)
+                    target_stream.download(output_path="downloads")
                 else: #when streaming_type_variable is "both"
-                    streams_available = yt.streams.filter(progressive=True)
-                    target_stream = self.filter_progressive_streams(streams_available)
+                    #audio part
+                    streams_available = yt.streams.filter(only_audio=True)
+                    target_stream = self.filter_audio_streams(streams_available)
+                    audio_string = target_stream.download(output_path="downloads")
+                    
+                    #video part
+                    streams_available = yt.streams.filter(only_video=True)
+                    target_stream = self.filter_video_streams(streams_available)
+                    video_string = target_stream.download(output_path="downloads")
+                    
+                    subprocess.run([
+                        "ffmpeg",
+                        "-i", video_string,
+                        "-i", audio_string,
+                        "-c:v", "copy",
+                        "-c:a", "aac",
+                        f"{video_string.split('.')[0]}_merged.mp4"
+                    ])
+                    
+                    for f in [video_string, audio_string]:
+                        try:
+                            os.remove(f)
+                        except FileNotFoundError:
+                            pass
                 
-                #downloading the target
-                target_stream.download(output_path="downloads")
                 PopupMessage(self,font=popup_font, text="Download complete!")
                 self.entry.delete(0, "end")
             except:
