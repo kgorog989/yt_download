@@ -6,6 +6,25 @@ Download single videos, or whole playlists. Videos could be downloaded in an onl
 When downloaded successfully a popup message appears in a separate window to notify the user. 
 When the download link is incorrect, an error message will appear in a popup window. 
 
+#### Quality Improvement with FFmpeg
+
+For single video downloads in best quality:
+
+- Video and audio streams are downloaded separately
+
+- FFmpeg is used to merge them
+
+- This produces noticeably better quality than using a single combined stream
+
+## Technologies Used
+- Python
+
+- customtkinter
+
+- pytube
+
+- ffmpeg
+
 <p align="center" width="100%">
 <img width="50%" alt="image" src="https://github.com/user-attachments/assets/ca853a42-0b64-4d5d-b52b-73258a618ba0">
 </p>
